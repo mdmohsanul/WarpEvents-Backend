@@ -5,12 +5,23 @@ import { errorHandler } from "./utils/errorHandler.js";
 
 const app = express();
 
+
+const allowedOrigins = [
+  "https://warp-events.vercel.app", // Production frontend
+  "http://localhost:5173", // Dev frontend
+];
+
 const corsOptions = {
-  origin: "http://localhost:5173",
-  credentials: true, // Allow cookies,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // Allow cookies
   optionSuccessStatus: 200,
 };
-
 app.use(cors(corsOptions));
 
 // middleware for json data

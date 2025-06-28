@@ -28,28 +28,56 @@ const fetchEvents =  asyncHandler(async (req,res) => {
     )
 })
 
-const registerForEvent  = asyncHandler(async(req,res) => {
-    const event = await Event.findById(req.params.id);
+const getEventById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const event = await Event.findById(id)
+    .populate("createdBy", "name email") // populate creator
+    .populate("attendees", "name email"); // populate attendees
+
   if (!event) {
-      throw new ApiError(404,"Event not found" )
+    return res.status(404).json(new ApiResponse(404, null, "Event not found"));
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, event, "Event fetched successfully"));
+});
+
+const registerForEvent = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.id);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
   }
 
   if (!event.attendees.includes(req.user.id)) {
     event.attendees.push(req.user.id);
-    await event.save();
   }
 
-  return res.status(200).json(200,{},"Registered successfully")
-})
+  const updatedEvent = await event.save();
 
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedEvent, "Registered successfully"));
+});
 
-const getAttendees = asyncHandler(async (req,res) => {
-const event = await Event.findById(req.params.id).populate("attendees", "name email");
+const getAttendees = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.id).populate(
+    "attendees",
+    "name email"
+  );
   if (!event) {
-    throw new ApiError(404, "Event not found")
+    throw new ApiError(404, "Event not found");
   }
-    return res.status(200).json(200,event.attendees,"Attendees fetched successfully")
-  
-})
+  return res
+    .status(200)
+    .json(200, event.attendees, "Attendees fetched successfully");
+});
 
-export {createEvent,fetchEvents,registerForEvent,getAttendees}
+export {
+  createEvent,
+  fetchEvents,
+  registerForEvent,
+  getAttendees,
+  getEventById,
+};
