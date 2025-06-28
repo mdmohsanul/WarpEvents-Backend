@@ -25,8 +25,11 @@ app.use(cookieParser());
 // routes  ----------------
 
 import userRouter from "./routers/user.routes.js";
+import eventRouter from "./routers/event.route.js";
 
 app.use("/api/v1/auth", userRouter);
+app.use("/api/v1/events", eventRouter);
+
 
 app.use(errorHandler);
 export { app };
