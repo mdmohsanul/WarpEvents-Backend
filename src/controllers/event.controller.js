@@ -20,13 +20,52 @@ const createEvent =  asyncHandler(async (req,res) => {
     .json(new ApiResponse(200, event, "Event created successfully"));
 })
 
-const fetchEvents =  asyncHandler(async (req,res) => {
-    const events = await Event.find().populate("createdBy")
+const fetchEvents = asyncHandler(async (req, res) => {
+  let { page, limit, search, sort } = req.query;
+
+  const query = {};
+  if (search) {
+    query.title = { $regex: search, $options: "i" }; // case-insensitive
+  }
+
+  // Default sort is ascending (oldest to newest)
+  const sortOrder = sort === "desc" ? -1 : 1;
+
+  if (page && limit) {
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    const total = await Event.countDocuments(query);
+    const events = await Event.find(query)
+      .sort({ date: sortOrder }) // sort by date based on query
+      .skip((page - 1) * limit)
+      .limit(limit);
 
     return res.status(200).json(
-        new ApiResponse(200, events , "Events fetched successfully")
-    )
-})
+      new ApiResponse(
+        200,
+        {
+          total,
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          events,
+        },
+        "Paginated events fetched with search and sort"
+      )
+    );
+  }
+
+  // If no pagination, return all events with search and sort
+  const events = await Event.find(query).sort({ date: sortOrder });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, events, "All events fetched with search and sort")
+    );
+});
+
+
 
 const getEventById = asyncHandler(async (req, res) => {
   const { id } = req.params;
